@@ -1,0 +1,94 @@
+select *
+from `portfolio-project-1-371112.CovidDeaths.cd`
+where continent is not null
+order by 3,4
+
+select *
+from `portfolio-project-1-371112.CovidVAC.Cv`
+order by 3,4
+
+select location,date, total_cases, new_cases, total_deaths,population
+from `portfolio-project-1-371112.CovidDeaths.cd`
+order by 1,2
+
+--Looking at Total Cases vs Total Death
+--Shows like
+
+select location,date, total_cases,total_deaths, (total_deaths/total_cases)*100 as death_percentage
+from `portfolio-project-1-371112.CovidDeaths.cd`
+where location like 'United Arab Emirates'
+order by 1,2
+
+--Looking at Total Cases vs Population
+--Shows what percentage of population got Covid
+
+select location,date, total_cases,population, (total_cases/population)*100 as case_percentage
+from `portfolio-project-1-371112.CovidDeaths.cd`
+where location like 'United Arab Emirates'
+order by 1,2
+
+
+-- Lokking at countries with highest infection rate compared to population
+select location,population,MAX(total_cases) as highest_infection,MAX((total_cases/population))*100 as case_percentage
+from `portfolio-project-1-371112.CovidDeaths.cd`
+group by location,population
+order by case_percentage desc
+
+-- Showing countries with highest death count per population
+select location,MAX(total_deaths) as total_death_count 
+from `portfolio-project-1-371112.CovidDeaths.cd`
+where continent is not null
+group by location
+order by total_death_count desc
+
+--Let's check things by continent
+--Shows continents with the highest death 
+
+select location,MAX(total_deaths) as total_death_count 
+from `portfolio-project-1-371112.CovidDeaths.cd`
+where continent is null
+group by location
+order by total_death_count desc
+
+--Global Numbers
+
+select date,SUM(new_cases)as total_cases,SUM(new_deaths)as total_death,SUM(new_deaths)/SUM (new_cases)*100 as death_percentage
+from `portfolio-project-1-371112.CovidDeaths.cd`
+where continent is not null
+group by date
+order by 1,2
+
+
+--Total Worldwide cases
+
+select SUM(new_cases)as total_cases,SUM(new_deaths)as total_death,SUM(new_deaths)/SUM (new_cases)*100 as death_percentage
+from `portfolio-project-1-371112.CovidDeaths.cd`
+where continent is not null
+order by 1,2
+
+--Looking at Total Population vs Vaccination
+
+Select dea.continent,dea.location,dea.date, dea.population,vac.new_vaccinations, SUM(vac.new_vaccinations) over(partition by dea.location,dea.date) as rolling_people_vac
+From `portfolio-project-1-371112.CovidDeaths.cd`  dea
+join `portfolio-project-1-371112.CovidVAC.Cv`      vac
+  on dea.location= vac.location
+  and dea.date = vac.date
+where dea.continent is not null
+order by 2,3
+
+--USE CTE
+WITH PopvsVac 
+AS
+(
+Select dea.continent,dea.location,dea.date, dea.population,vac.new_vaccinations, SUM(vac.new_vaccinations) over(partition by dea.location,dea.date) as rolling_people_vac
+From `portfolio-project-1-371112.CovidDeaths.cd`  dea
+join `portfolio-project-1-371112.CovidVAC.Cv`      vac
+  on dea.location= vac.location
+  and dea.date = vac.date
+where dea.continent is not null
+--order by 2,3
+)
+select *, (rolling_people_vac/population)*100 as percent_population_vaccinated
+from PopvsVac
+
+
